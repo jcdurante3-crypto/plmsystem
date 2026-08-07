@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1e293b" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Plate Lifecycle Monitoring System (Offline PWA + Electron)</title>
+  </head>
+  <body class="bg-slate-900 text-slate-100 antialiased selection:bg-cyan-500 selection:text-slate-950 min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('Offline PWA ServiceWorker registered:', reg.scope);
+          }).catch((err) => {
+            console.log('SW registration failed:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+

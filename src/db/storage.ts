@@ -1,3 +1,4 @@
+import localforage from 'localforage';
 import {
   ProductionSet,
   PlateMaster,
@@ -9,6 +10,11 @@ import {
   RejectType,
   ReplacementReason
 } from '../types';
+
+localforage.config({
+  name: 'PlateLifecycleManagementSystem',
+  storeName: 'plm_storage'
+});
 
 const DB_NAME = 'PlateMonitoringDB';
 const DB_VERSION = 1;
@@ -371,9 +377,14 @@ class StorageEngine {
     if (!this.isBrowser()) return;
 
     try {
-      const stored = localStorage.getItem('plate_monitoring_db');
+      const stored = await localforage.getItem<DatabaseDump | string>('plate_monitoring_db');
       if (stored) {
-        const parsed: DatabaseDump = JSON.parse(stored);
+        let parsed: DatabaseDump;
+        if (typeof stored === 'string') {
+          parsed = JSON.parse(stored);
+        } else {
+          parsed = stored as DatabaseDump;
+        }
         
         // If version is older or plates are missing, reseed/ensure 11 plates per set
         if (!parsed.version || parsed.version !== '2.1.0' || (parsed.plates && parsed.plates.length < 20)) {
@@ -385,7 +396,7 @@ class StorageEngine {
             replacementLogs: INITIAL_REPLACEMENTS,
             auditLogs: INITIAL_AUDIT_LOGS,
           };
-          this.saveToStorage();
+          await this.saveToStorage();
         } else {
           this.memoryCache = {
             sets: parsed.sets || [],
@@ -397,16 +408,37 @@ class StorageEngine {
           };
         }
       } else {
-        // Initialize with default sample data
-        this.memoryCache = {
-          sets: INITIAL_SETS,
-          plates: INITIAL_PLATES,
-          plateHistory: INITIAL_PLATE_HISTORY,
-          cycleEntries: INITIAL_CYCLES,
-          replacementLogs: INITIAL_REPLACEMENTS,
-          auditLogs: INITIAL_AUDIT_LOGS,
-        };
-        this.saveToStorage();
+        // Check legacy localStorage as migration fallback
+        const legacyStored = localStorage.getItem('plate_monitoring_db');
+        if (legacyStored) {
+          try {
+            const parsed: DatabaseDump = JSON.parse(legacyStored);
+            this.memoryCache = {
+              sets: parsed.sets || INITIAL_SETS,
+              plates: parsed.plates || INITIAL_PLATES,
+              plateHistory: parsed.plateHistory || INITIAL_PLATE_HISTORY,
+              cycleEntries: parsed.cycleEntries || INITIAL_CYCLES,
+              replacementLogs: parsed.replacementLogs || INITIAL_REPLACEMENTS,
+              auditLogs: parsed.auditLogs || INITIAL_AUDIT_LOGS,
+            };
+            await this.saveToStorage();
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (!this.memoryCache) {
+          // Initialize with default sample data
+          this.memoryCache = {
+            sets: INITIAL_SETS,
+            plates: INITIAL_PLATES,
+            plateHistory: INITIAL_PLATE_HISTORY,
+            cycleEntries: INITIAL_CYCLES,
+            replacementLogs: INITIAL_REPLACEMENTS,
+            auditLogs: INITIAL_AUDIT_LOGS,
+          };
+          await this.saveToStorage();
+        }
       }
 
       this.ensure11PlatesForAllSets();
@@ -482,7 +514,7 @@ class StorageEngine {
     }
   }
 
-  private saveToStorage(): void {
+  private async saveToStorage(): Promise<void> {
     if (!this.isBrowser() || !this.memoryCache) return;
     try {
       const dump: DatabaseDump = {
@@ -490,9 +522,9 @@ class StorageEngine {
         exportedAt: new Date().toISOString(),
         ...this.memoryCache,
       };
-      localStorage.setItem('plate_monitoring_db', JSON.stringify(dump));
+      await localforage.setItem('plate_monitoring_db', dump);
     } catch (e) {
-      console.error('Failed to save state to localStorage:', e);
+      console.error('Failed to save state to localforage:', e);
     }
   }
 

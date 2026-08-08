@@ -8,49 +8,56 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist server.js release",
     "lint": "tsc --noEmit",
     "electron": "electron .",
-    "electron-build": "vite build && electron-builder --win portable"
+    "electron-build": "vite build && electron-builder --win portable --x64"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "lucide-react": "^0.546.0",
-    "motion": "^12.23.24",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "recharts": "^3.10.1",
-    "vite": "^6.2.3"
+    "clsx": "^2.1.1",
+    "localforage": "^1.10.0",
+    "lucide-react": "^0.475.0",
+    "motion": "^12.4.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
+    "typescript": "~5.7.2",
     "vite": "^6.2.3"
   },
   "build": {
     "appId": "com.plmsystem.app",
     "productName": "PLM System",
     "directories": {
-      "output": "dist-electron"
+      "output": "release"
     },
     "files": [
       "dist/**/*",
+      "electron.js",
       "electron.cjs",
       "preload.cjs"
     ],
     "win": {
-      "target": "portable",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "PLM System Portable.exe"
     }
   }

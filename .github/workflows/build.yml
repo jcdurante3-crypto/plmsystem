@@ -13,10 +13,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm install
@@ -26,6 +26,8 @@ jobs:
 
       - name: Build Electron Portable EXE
         run: npm run electron-build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
